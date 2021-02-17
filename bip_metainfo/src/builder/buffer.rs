@@ -65,7 +65,8 @@ impl PieceBuffer {
     }
 
     pub fn write_bytes<C>(&mut self, mut callback: C) -> io::Result<usize>
-        where C: FnMut(&mut [u8]) -> io::Result<usize>
+    where
+        C: FnMut(&mut [u8]) -> io::Result<usize>,
     {
         let new_bytes_read = try!(callback(&mut self.buffer[self.bytes_read..]));
         self.bytes_read += new_bytes_read;

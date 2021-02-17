@@ -26,14 +26,16 @@ enum WorkerMessage {
 }
 
 /// Starts a number of hasher workers which will generate the hash pieces for the files we send to it.
-pub fn start_hasher_workers<A, C>(accessor: A,
-                                  piece_length: usize,
-                                  num_pieces: u64,
-                                  num_workers: usize,
-                                  progress: C)
-                                  -> ParseResult<Vec<(usize, ShaHash)>>
-    where A: Accessor,
-          C: FnMut(f64) + Send + 'static
+pub fn start_hasher_workers<A, C>(
+    accessor: A,
+    piece_length: usize,
+    num_pieces: u64,
+    num_workers: usize,
+    progress: C,
+) -> ParseResult<Vec<(usize, ShaHash)>>
+where
+    A: Accessor,
+    C: FnMut(f64) + Send + 'static,
 {
     // Create channels to communicate with the master
     let (master_send, master_recv) = mpsc::channel();
@@ -62,12 +64,7 @@ pub fn start_hasher_workers<A, C>(accessor: A,
     });
 
     // Create the master worker to coordinate between the workers
-    start_hash_master(accessor,
-                      num_workers,
-                      master_recv,
-                      work_sender,
-                      piece_buffers,
-                      prog_send)
+    start_hash_master(accessor, num_workers, master_recv, work_sender, piece_buffers, prog_send)
 }
 
 // ----------------------------------------------------------------------------//
@@ -101,8 +98,7 @@ where
 
                 let mut end_of_region = false;
                 while !end_of_region {
-                    end_of_region =
-                        try!(curr_piece_buffer.write_bytes(|buffer| piece_region.read(buffer))) == 0;
+                    end_of_region = try!(curr_piece_buffer.write_bytes(|buffer| piece_region.read(buffer))) == 0;
 
                     if curr_piece_buffer.is_whole() {
                         work.send(WorkerMessage::HashPiece(piece_index, curr_piece_buffer)).unwrap();
@@ -117,7 +113,7 @@ where
                 }
 
                 opt_piece_buffer = Some(curr_piece_buffer);
-            },
+            }
             PieceAccess::PreComputed(hash) => {
                 pieces.push((piece_index, hash));
 
@@ -203,8 +199,8 @@ fn start_hash_worker(send: mpsc::Sender<MasterMessage>, work: Receiver<WorkerMes
 
 #[cfg(test)]
 mod tests {
-    use std::ops::{Range, Index};
     use std::io::{self, Cursor};
+    use std::ops::{Index, Range};
     use std::path::Path;
     use std::sync::mpsc;
 
@@ -239,8 +235,7 @@ mod tests {
 
             rng.fill_bytes(&mut buffer);
 
-            let (begin, end) = (self.contiguous_buffer.len(),
-                                self.contiguous_buffer.len() + buffer.len());
+            let (begin, end) = (self.contiguous_buffer.len(), self.contiguous_buffer.len() + buffer.len());
 
             self.contiguous_buffer.extend_from_slice(&buffer);
             self.buffer_ranges.push(begin..end);
@@ -259,14 +254,16 @@ mod tests {
 
         /// Access the metadata for all files including their length and path.
         fn access_metadata<C>(&self, _: C) -> io::Result<()>
-            where C: FnMut(u64, &Path)
+        where
+            C: FnMut(u64, &Path),
         {
             panic!("Accessor::access_metadata should not be called with MockAccessor...");
         }
 
         /// Access the sequential pieces that make up all of the files.
         fn access_pieces<C>(&self, mut callback: C) -> io::Result<()>
-            where C: for<'a> FnMut(PieceAccess<'a>) -> io::Result<()>
+        where
+            C: for<'a> FnMut(PieceAccess<'a>) -> io::Result<()>,
         {
             for range in self.buffer_ranges.iter() {
                 let mut next_region = Cursor::new(self.contiguous_buffer.index(range.clone()));
@@ -281,17 +278,14 @@ mod tests {
     fn validate_entries_pieces(accessor: MockAccessor, piece_length: usize, num_threads: usize) {
         let (prog_send, prog_recv) = mpsc::channel();
 
-        let total_num_pieces = ((accessor.as_slice().len() as f64) / (piece_length as f64))
-            .ceil() as u64;
-        let received_pieces = worker::start_hasher_workers(&accessor,
-                                                           piece_length,
-                                                           total_num_pieces,
-                                                           num_threads,
-                                                           move |update| {
-                                                               prog_send.send(update).unwrap();
-                                                           }).unwrap();
+        let total_num_pieces = ((accessor.as_slice().len() as f64) / (piece_length as f64)).ceil() as u64;
+        let received_pieces = worker::start_hasher_workers(&accessor, piece_length, total_num_pieces, num_threads, move |update| {
+            prog_send.send(update).unwrap();
+        })
+        .unwrap();
 
-        let computed_pieces = accessor.as_slice()
+        let computed_pieces = accessor
+            .as_slice()
             .chunks(piece_length)
             .enumerate()
             .map(|(index, chunk)| (index, ShaHash::from_bytes(chunk)))
@@ -347,9 +341,11 @@ mod tests {
     fn positive_piece_length_divisible_regions_single_thread() {
         let mut accessor = MockAccessor::new();
 
-        let region_lengths = [DEFAULT_PIECE_LENGTH * DEFAULT_NUM_PIECES,
-                              DEFAULT_PIECE_LENGTH * 1,
-                              DEFAULT_PIECE_LENGTH * 50];
+        let region_lengths = [
+            DEFAULT_PIECE_LENGTH * DEFAULT_NUM_PIECES,
+            DEFAULT_PIECE_LENGTH * 1,
+            DEFAULT_PIECE_LENGTH * 50,
+        ];
         for &region_length in region_lengths.iter() {
             accessor.create_region(region_length);
         }
@@ -361,9 +357,11 @@ mod tests {
     fn positive_piece_length_divisible_regions_multiple_threads() {
         let mut accessor = MockAccessor::new();
 
-        let region_lengths = [DEFAULT_PIECE_LENGTH * DEFAULT_NUM_PIECES,
-                              DEFAULT_PIECE_LENGTH * 1,
-                              DEFAULT_PIECE_LENGTH * 50];
+        let region_lengths = [
+            DEFAULT_PIECE_LENGTH * DEFAULT_NUM_PIECES,
+            DEFAULT_PIECE_LENGTH * 1,
+            DEFAULT_PIECE_LENGTH * 50,
+        ];
         for &region_length in region_lengths.iter() {
             accessor.create_region(region_length);
         }
@@ -375,10 +373,12 @@ mod tests {
     fn positive_piece_length_undivisible_regions_single_thread() {
         let mut accessor = MockAccessor::new();
 
-        let region_lengths = [DEFAULT_PIECE_LENGTH / 2 * DEFAULT_NUM_PIECES,
-                              DEFAULT_PIECE_LENGTH / 4 * DEFAULT_NUM_PIECES,
-                              DEFAULT_PIECE_LENGTH * 1,
-                              (DEFAULT_PIECE_LENGTH * 2 - 1) * 2];
+        let region_lengths = [
+            DEFAULT_PIECE_LENGTH / 2 * DEFAULT_NUM_PIECES,
+            DEFAULT_PIECE_LENGTH / 4 * DEFAULT_NUM_PIECES,
+            DEFAULT_PIECE_LENGTH * 1,
+            (DEFAULT_PIECE_LENGTH * 2 - 1) * 2,
+        ];
         for &region_length in region_lengths.iter() {
             accessor.create_region(region_length);
         }
@@ -390,10 +390,12 @@ mod tests {
     fn positive_piece_length_undivisible_regions_multiple_threads() {
         let mut accessor = MockAccessor::new();
 
-        let region_lengths = [DEFAULT_PIECE_LENGTH / 2 * DEFAULT_NUM_PIECES,
-                              DEFAULT_PIECE_LENGTH / 4 * DEFAULT_NUM_PIECES,
-                              DEFAULT_PIECE_LENGTH * 1,
-                              (DEFAULT_PIECE_LENGTH * 2 - 1) * 2];
+        let region_lengths = [
+            DEFAULT_PIECE_LENGTH / 2 * DEFAULT_NUM_PIECES,
+            DEFAULT_PIECE_LENGTH / 4 * DEFAULT_NUM_PIECES,
+            DEFAULT_PIECE_LENGTH * 1,
+            (DEFAULT_PIECE_LENGTH * 2 - 1) * 2,
+        ];
         for &region_length in region_lengths.iter() {
             accessor.create_region(region_length);
         }
