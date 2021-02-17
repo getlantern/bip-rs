@@ -1,6 +1,6 @@
 use std::io;
 
-use crossbeam::sync::MsQueue;
+use crossbeam_channel::*;
 
 // Ensures that we have enough buffers to keep workers busy.
 const TOTAL_BUFFERS_MULTIPLICATIVE: usize = 2;
@@ -8,32 +8,36 @@ const TOTAL_BUFFERS_ADDITIVE: usize = 0;
 
 /// Stores a set number of piece buffers to be used and re-used.
 pub struct PieceBuffers {
-    piece_queue: MsQueue<PieceBuffer>,
+    piece_queue_sender: Sender<PieceBuffer>,
+    piece_queue_receiver: Receiver<PieceBuffer>,
 }
 
 impl PieceBuffers {
     /// Create a new queue filled with a number of piece buffers based on the number of workers.
     pub fn new(piece_length: usize, num_workers: usize) -> PieceBuffers {
-        let piece_queue = MsQueue::new();
+        let (piece_queue_sender, piece_queue_receiver) = unbounded();
 
         let total_buffers = calculate_total_buffers(num_workers);
         for _ in 0..total_buffers {
-            piece_queue.push(PieceBuffer::new(piece_length));
+            piece_queue_sender.send(PieceBuffer::new(piece_length));
         }
 
-        PieceBuffers { piece_queue: piece_queue }
+        PieceBuffers {
+            piece_queue_sender,
+            piece_queue_receiver,
+        }
     }
 
     /// Checkin the given piece buffer to be re-used.
     pub fn checkin(&self, mut buffer: PieceBuffer) {
         buffer.bytes_read = 0;
 
-        self.piece_queue.push(buffer);
+        self.piece_queue_sender.send(buffer);
     }
 
     /// Checkout a piece buffer (possibly blocking) to be used.
     pub fn checkout(&self) -> PieceBuffer {
-        self.piece_queue.pop()
+        self.piece_queue_receiver.recv().unwrap()
     }
 }
 
