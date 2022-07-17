@@ -32,7 +32,7 @@ fn main() {
             output_file.write_all(&bytes).unwrap();
 
             print_metainfo_overview(&bytes);
-        }
+        },
         Err(error) => println!("Error With Input: {:?}", error),
     }
 }

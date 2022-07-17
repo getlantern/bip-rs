@@ -323,7 +323,7 @@ where
         info_access.insert(parse::PIECES_KEY.into(), ben_bytes!(&pieces[..]));
 
         // If the accessor specifies a directory OR there are mutliple files, we will build a multi file torrent
-        // If the directory is not present but there are multiple files, the direcotry field will be set to empty
+        // If the directory is not present but there are multiple files, the directory field will be set to empty
         match (&access_directory, files_info.len() > 1) {
             (&Some(ref directory), _) => {
                 let mut bencode_files = BencodeMut::new_list();
@@ -352,7 +352,7 @@ where
 
                 info_access.insert(parse::NAME_KEY.into(), ben_bytes!(directory.as_ref()));
                 info_access.insert(parse::FILES_KEY.into(), bencode_files);
-            }
+            },
             (&None, true) => {
                 let mut bencode_files = BencodeMut::new_list();
 
@@ -380,7 +380,7 @@ where
 
                 info_access.insert(parse::NAME_KEY.into(), ben_bytes!(""));
                 info_access.insert(parse::FILES_KEY.into(), bencode_files);
-            }
+            },
             (&None, false) => {
                 // Single File
                 for name_component in files_info[0].1.iter() {
@@ -427,6 +427,7 @@ fn calculate_piece_length(total_file_size: u64, max_pieces_size: usize, min_piec
         (_, false) => ALL_OPT_MAX_PIECE_LENGTH,
     }
 }
+
 /// Map the pieces list into a list of bytes (byte string).
 fn map_pieces_list<I>(pieces: I) -> Vec<u8>
 where

@@ -113,12 +113,12 @@ where
                 }
 
                 opt_piece_buffer = Some(curr_piece_buffer);
-            }
+            },
             PieceAccess::PreComputed(hash) => {
                 pieces.push((piece_index, hash));
 
                 piece_index += 1;
-            }
+            },
         }
 
         Ok(())
@@ -183,13 +183,13 @@ fn start_hash_worker(send: mpsc::Sender<MasterMessage>, work: Receiver<WorkerMes
         match work_item {
             WorkerMessage::Finish => {
                 work_to_do = false;
-            }
+            },
             WorkerMessage::HashPiece(index, buffer) => {
                 let hash = ShaHash::from_bytes(buffer.as_slice());
 
                 send.send(MasterMessage::AcceptPiece(index, hash)).unwrap();
                 buffers.checkin(buffer);
-            }
+            },
         }
     }
 
