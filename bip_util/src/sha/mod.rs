@@ -10,7 +10,7 @@ pub use sha::builder::ShaHashBuilder;
 pub const SHA_HASH_LEN: usize = 20;
 
 /// SHA-1 hash wrapper type for performing operations on the hash.
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, PartialOrd, Ord)]
+#[derive(Copy, Clone, Default, PartialEq, Eq, Hash, Debug, PartialOrd, Ord)]
 pub struct ShaHash {
     hash: [u8; SHA_HASH_LEN],
 }

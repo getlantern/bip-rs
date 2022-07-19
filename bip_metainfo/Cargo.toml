@@ -15,8 +15,8 @@ license          = "MIT/Apache-2.0"
 
 [dependencies]
 bip_bencode      = { version = "0.4" }
-bip_util         = { version = "0.5" }
-crossbeam        = "0.3"
+bip_util         = { version = "0.5", path = "../bip_util" }
+crossbeam-channel = "*"
 walkdir          = "2.0"
 error-chain      = "0.11"
 

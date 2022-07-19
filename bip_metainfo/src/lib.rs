@@ -61,7 +61,7 @@
 #[macro_use]
 extern crate bip_bencode;
 extern crate bip_util;
-extern crate crossbeam;
+extern crate crossbeam_channel;
 extern crate walkdir;
 #[macro_use]
 extern crate error_chain;
@@ -79,6 +79,6 @@ pub mod iter;
 
 pub use bip_util::bt::InfoHash;
 
-pub use accessor::{Accessor, IntoAccessor, DirectAccessor, FileAccessor, PieceAccess};
-pub use builder::{MetainfoBuilder, PieceLength, InfoBuilder};
-pub use metainfo::{Info, Metainfo, File};
+pub use accessor::{Accessor, DirectAccessor, FileAccessor, IntoAccessor, PieceAccess};
+pub use builder::{InfoBuilder, MetainfoBuilder, PieceLength};
+pub use metainfo::{File, Info, Metainfo};
