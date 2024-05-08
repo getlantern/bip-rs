@@ -1,3 +1,6 @@
+//! This seems to be needed by more recent Rust versions when cross-compiling.
+#![recursion_limit = "256"]
+
 //! Library for parsing and converting bencoded data.
 //!
 //! # Examples
