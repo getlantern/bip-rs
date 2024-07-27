@@ -382,14 +382,37 @@ where
                 info_access.insert(parse::FILES_KEY.into(), bencode_files);
             },
             (&None, false) => {
-                // Single File
-                for name_component in files_info[0].1.iter() {
-                    single_file_name.push_str(name_component);
-                }
+                assert_eq!(files_info.len(), 1);
+                let single_file = &files_info[0];
+                if single_file.1.len() <= 1 {
+                    // The one and only component (I don't think there could be none, that would
+                    // still be ""), will be the name key, and we can generate a single-file info.
+                    info_access.insert(parse::LENGTH_KEY.into(), ben_int!(single_file.0 as i64));
+                    info_access.insert(parse::NAME_KEY.into(), ben_bytes!(single_file.1[0].as_str()));
+                } else {
+                    // The single file has multiple components, so we'll make a multi-file info,
+                    // with a single file, and the first component can be the info name.
 
-                info_access.insert(parse::LENGTH_KEY.into(), ben_int!(files_info[0].0 as i64));
-                info_access.insert(parse::NAME_KEY.into(), ben_bytes!(&single_file_name[..]));
-            }
+                    // I don't think we can jam this all in a ben_list! macro below because
+                    // ben_list! doesn't seem to support converting from an iterable type? I don't
+                    // think you can implement Extend or a collect-compatible trait for BencodeMut
+                    // because it doesn't imply a list without a BListAccess?
+                    let mut path = BencodeMut::new_list();
+                    let path_access = path.list_mut().unwrap();
+                    for path_element in single_file.1[1..].iter() {
+                        path_access.push(ben_bytes!(&path_element[..]));
+                    }
+
+                    info_access.insert(parse::NAME_KEY.into(), ben_bytes!(single_file.1[0].as_str()));
+                    info_access.insert(
+                        parse::FILES_KEY.into(),
+                        ben_list!(ben_map! {
+                            parse::LENGTH_KEY => ben_int!(single_file.0 as i64),
+                            parse::PATH_KEY   => path
+                        }),
+                    );
+                }
+            },
         }
     }
 

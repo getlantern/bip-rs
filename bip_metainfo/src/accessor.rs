@@ -175,6 +175,7 @@ fn entry_file_filter(res_entry: &walkdir::Result<DirEntry>) -> bool {
 
 /// Accessor that pulls data in directly from memory.
 pub struct DirectAccessor<'a> {
+    // TODO: Support a specific info name? Support multiple files?
     file_name: &'a str,
     file_contents: &'a [u8],
 }
